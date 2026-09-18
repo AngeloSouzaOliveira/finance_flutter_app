@@ -25,4 +25,20 @@ Transacao({
         tipo = map['tipo'],
         descricao = map['descricao'],
         imagemPath = map['imagemPath'];
+
+  Map<String, dynamic> toMap() {
+      var map = <String, dynamic>{
+        'titulo': titulo,
+        'valor': valor,
+        'dataHora': dataHora,
+        'tipo': tipo,
+        'descricao': descricao,
+        'imagemPath': imagemPath,
+      };
+
+      if (id != null) {
+        map['id'] = id;
+      }
+      return map;
+  }
 }
