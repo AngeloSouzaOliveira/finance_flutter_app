@@ -7,7 +7,7 @@ class Transacao {
   String? descricao;
   String? imagemPath;
 
-Transacao({
+  Transacao({
     this.id,
     required this.titulo,
     required this.valor,
@@ -18,27 +18,41 @@ Transacao({
   });
 
   Transacao.fromMap(Map<String, dynamic> map)
-      : id = map['id'],
-        titulo = map['titulo'],
-        valor = (map['valor'] as num).toDouble(),
-        dataHora = map['dataHora'],
-        tipo = map['tipo'],
-        descricao = map['descricao'],
-        imagemPath = map['imagemPath'];
+    : id = map['id'],
+      titulo = map['titulo'],
+      valor = (map['valor'] as num).toDouble(),
+      dataHora = map['dataHora'],
+      tipo = map['tipo'],
+      descricao = map['descricao'],
+      imagemPath = map['imagemPath'];
 
   Map<String, dynamic> toMap() {
-      var map = <String, dynamic>{
-        'titulo': titulo,
-        'valor': valor,
-        'dataHora': dataHora,
-        'tipo': tipo,
-        'descricao': descricao,
-        'imagemPath': imagemPath,
-      };
+    var map = <String, dynamic>{
+      'titulo': titulo,
+      'valor': valor,
+      'dataHora': dataHora,
+      'tipo': tipo,
+      'descricao': descricao,
+      'imagemPath': imagemPath,
+    };
 
-      if (id != null) {
-        map['id'] = id;
-      }
-      return map;
+    if (id != null) {
+      map['id'] = id;
+    }
+    return map;
   }
+}
+
+class Categoria {
+  int? id;
+  String nome;
+  String cor;
+
+  Categoria({
+    this.id,
+    required this.nome,
+    required this.cor,
+  });
+
+
 }
