@@ -54,4 +54,35 @@ class DBHelper {
     final clientDb = await db;
     return await clientDb.insert(_tableName, transacao.toMap());
   }
+
+  Future<List<Transacao>> getTransacoes() async {
+    final clientDb = await db;
+    final List<Map<String, dynamic>> maps = await clientDb.query(
+      _tableName,
+      orderBy: '$colId DESC',
+    );
+
+    return List.generate(maps.length, (i) => Transacao.fromMap(maps[i]));
+  }
+
+    Future<int> updateTransacao(Transacao transacao) async {
+    final clientDb = await db;
+    return await clientDb.update(
+      _tableName,
+      transacao.toMap(),
+      where: '$colId = ?',
+      whereArgs: [transacao.id],
+    );
+  }
+
+  Future<int> deleteTransacao(int id) async {
+    final clientDb = await db;
+    return await clientDb.delete(
+      _tableName,
+      where: '$colId = ?',
+      whereArgs: [id],
+    );
+  }
+
+
 }
