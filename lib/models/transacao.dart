@@ -42,17 +42,3 @@ class Transacao {
     return map;
   }
 }
-
-class Categoria {
-  int? id;
-  String nome;
-  String cor;
-
-  Categoria({
-    this.id,
-    required this.nome,
-    required this.cor,
-  });
-
-
-}
