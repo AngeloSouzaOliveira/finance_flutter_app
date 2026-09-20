@@ -52,7 +52,6 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
       },
     );
 
-    // Se o utilizador clicou no botão Eliminar
     if (confirmar == true && _transacaoAtual.id != null) {
       await _dbHelper.deleteTransacao(_transacaoAtual.id!);
 
@@ -69,7 +68,6 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     }
   }
 
-  // Abre o formulário em modo de edição
   Future<void> _editarTransacao() async {
     final bool? alterou = await Navigator.push<bool>(
       context,
@@ -120,7 +118,6 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Cartão de Destaque com Valor e Tipo
             Card(
               elevation: 3,
               color: isReceita ? Colors.green[50] : Colors.red[50],
@@ -164,7 +161,6 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Secção de Metadados: Data, Hora e Natureza da Operação
             Card(
               elevation: 2,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
@@ -191,7 +187,6 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Secção de Descrição / Observações
             Card(
               elevation: 2,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
@@ -222,48 +217,6 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Secção do Comprovativo / Fotografia Anexada
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Comprovativo Anexo',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 12),
-                    if (_transacaoAtual.imagemPath != null && File(_transacaoAtual.imagemPath!).existsSync())
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10.0),
-                        child: Image.file(
-                          File(_transacaoAtual.imagemPath!),
-                          width: double.infinity,
-                          height: 220,
-                          fit: BoxFit.cover,
-                        ),
-                      )
-                    else
-                      const Row(
-                        children: [
-                          Icon(Icons.image_not_supported, color: Colors.grey),
-                          SizedBox(width: 8),
-                          Text(
-                            'Nenhum ficheiro fotográfico anexado.',
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Botão Inferior de Eliminação
             OutlinedButton.icon(
               onPressed: _confirmarExclusao,
               icon: const Icon(Icons.delete_outline, color: Colors.red),
