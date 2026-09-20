@@ -24,31 +24,71 @@ class TransactionCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12.0),
       ),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: isReceita ? Colors.green[100] : Colors.red[100],
-          child: Icon(
-            isReceita ? Icons.arrow_upward : Icons.arrow_downward,
-            color: isReceita ? Colors.green[800] : Colors.red[800],
-          ),
-        ),
-        title: Text(
-          transacao.titulo,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        subtitle: Text(
-          transacao.dataHora,
-          style: const TextStyle(color: Colors.grey, fontSize: 13),
-        ),
-        trailing: Text(
-          '${isReceita ? '+' : '-'} ${formatadorMoeda.format(transacao.valor)}',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: isReceita ? Colors.green[700] : Colors.red[700],
-          ),
-        ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12.0),
         onTap: onTap,
+        child: Column(
+          children: [
+            ListTile(
+              contentPadding: const EdgeInsets.only(
+                left: 16.0,
+                right: 16.0,
+                top: 8.0,
+                bottom: 4.0,
+              ),
+              leading: CircleAvatar(
+                backgroundColor: isReceita ? Colors.green[100] : Colors.red[100],
+                child: Icon(
+                  isReceita ? Icons.arrow_upward : Icons.arrow_downward,
+                  color: isReceita ? Colors.green[800] : Colors.red[800],
+                ),
+              ),
+              title: Text(
+                transacao.titulo,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              subtitle: Text(
+                transacao.dataHora,
+                style: const TextStyle(color: Colors.grey, fontSize: 13),
+              ),
+              trailing: Text(
+                '${isReceita ? '+' : '-'} ${formatadorMoeda.format(transacao.valor)}',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: isReceita ? Colors.green[700] : Colors.red[700],
+                ),
+              ),
+            ),
+            // Rodapé do card com dica de interação
+            Padding(
+              padding: const EdgeInsets.only(
+                left: 16.0,
+                right: 16.0,
+                bottom: 8.0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.touch_app,
+                    size: 13,
+                    color: Colors.grey.shade500,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'clique para ver ou editar',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
