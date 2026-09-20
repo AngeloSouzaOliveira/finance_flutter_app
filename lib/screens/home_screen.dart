@@ -4,7 +4,6 @@ import '../database/db_helper.dart';
 import '../models/transacao.dart';
 import '../widgets/balance_card.dart';
 import '../widgets/transaction_card.dart';
-import 'charts_screen.dart';
 import 'transaction_detail_screen.dart';
 import 'transaction_form_screen.dart';
 
@@ -80,16 +79,6 @@ class _HomeScreenState extends State<HomeScreen> {
     _carregarTransacoes();
   }
 
-  // Navega para a visão de gráficos
-  void _abrirGraficos() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const ChartsScreen(),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -98,13 +87,6 @@ class _HomeScreenState extends State<HomeScreen> {
           'Minhas Finanças',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.pie_chart),
-            tooltip: 'Ver Gráficos',
-            onPressed: _abrirGraficos,
-          ),
-        ],
       ),
       body: _carregando
           ? const Center(child: CircularProgressIndicator())
