@@ -1,16 +1,286 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../database/db_helper.dart';
 import '../models/transacao.dart';
+import 'transaction_form_screen.dart';
 
-class TransactionDetailScreen extends StatelessWidget {
+class TransactionDetailScreen extends StatefulWidget {
   final Transacao transacao;
+
   const TransactionDetailScreen({super.key, required this.transacao});
 
   @override
+  State<TransactionDetailScreen> createState() => _TransactionDetailScreenState();
+}
+
+class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
+  late Transacao _transacaoAtual;
+  final DBHelper _dbHelper = DBHelper();
+
+  @override
+  void initState() {
+    super.initState();
+    _transacaoAtual = widget.transacao;
+  }
+
+  // Caixa de diálogo para confirmar a exclusão definitiva do registo
+  Future<void> _confirmarExclusao() async {
+    final bool? confirmar = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Confirmar Eliminação'),
+          content: Text(
+            'Tem a certeza de que pretende eliminar o lançamento "${_transacaoAtual.titulo}"? Esta ação não pode ser revertida.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Eliminar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    // Se o utilizador clicou no botão Eliminar
+    if (confirmar == true && _transacaoAtual.id != null) {
+      await _dbHelper.deleteTransacao(_transacaoAtual.id!);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Lançamento eliminado com sucesso!'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+        // Regressa ao ecrã principal sinalizando que houve remoção
+        Navigator.pop(context, true);
+      }
+    }
+  }
+
+  // Abre o formulário em modo de edição
+  Future<void> _editarTransacao() async {
+    final bool? alterou = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TransactionFormScreen(
+          transacaoParaEdicao: _transacaoAtual,
+        ),
+      ),
+    );
+
+    // Se houve alterações salvas no banco, atualiza o registo em memória
+    if (alterou == true) {
+      final transacoesAtualizadas = await _dbHelper.getTransacoes();
+      final transacaoRecarregada = transacoesAtualizadas.firstWhere(
+        (t) => t.id == _transacaoAtual.id,
+        orElse: () => _transacaoAtual,
+      );
+
+      setState(() {
+        _transacaoAtual = transacaoRecarregada;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final formatadorMoeda = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    final bool isReceita = _transacaoAtual.tipo == 'receita';
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Detalhes do Registo')),
-      body: Center(
-        child: Text(''),
+      appBar: AppBar(
+        title: const Text('Detalhes do Registo'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            tooltip: 'Editar',
+            onPressed: _editarTransacao,
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete),
+            tooltip: 'Eliminar',
+            onPressed: _confirmarExclusao,
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Cartão de Destaque com Valor e Tipo
+            Card(
+              elevation: 3,
+              color: isReceita ? Colors.green[50] : Colors.red[50],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16.0),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
+                child: Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 36,
+                      backgroundColor: isReceita ? Colors.green[100] : Colors.red[100],
+                      child: Icon(
+                        isReceita ? Icons.arrow_upward : Icons.arrow_downward,
+                        size: 40,
+                        color: isReceita ? Colors.green[800] : Colors.red[800],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      _transacaoAtual.titulo,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${isReceita ? '+' : '-'} ${formatadorMoeda.format(_transacaoAtual.valor)}',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: isReceita ? Colors.green[800] : Colors.red[800],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Secção de Metadados: Data, Hora e Natureza da Operação
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.calendar_today, color: Colors.blueGrey),
+                      title: const Text('Data e Hora de Registo'),
+                      subtitle: Text(_transacaoAtual.dataHora),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    const Divider(),
+                    ListTile(
+                      leading: const Icon(Icons.category, color: Colors.blueGrey),
+                      title: const Text('Natureza da Operação'),
+                      subtitle: Text(isReceita ? 'Receita / Ganho' : 'Despesa / Pagamento'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Secção de Descrição / Observações
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Descrição / Observações',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _transacaoAtual.descricao != null && _transacaoAtual.descricao!.isNotEmpty
+                          ? _transacaoAtual.descricao!
+                          : 'Sem observações registadas.',
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: _transacaoAtual.descricao != null && _transacaoAtual.descricao!.isNotEmpty
+                            ? Colors.black87
+                            : Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Secção do Comprovativo / Fotografia Anexada
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Comprovativo Anexo',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 12),
+                    if (_transacaoAtual.imagemPath != null && File(_transacaoAtual.imagemPath!).existsSync())
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10.0),
+                        child: Image.file(
+                          File(_transacaoAtual.imagemPath!),
+                          width: double.infinity,
+                          height: 220,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    else
+                      const Row(
+                        children: [
+                          Icon(Icons.image_not_supported, color: Colors.grey),
+                          SizedBox(width: 8),
+                          Text(
+                            'Nenhum ficheiro fotográfico anexado.',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Botão Inferior de Eliminação
+            OutlinedButton.icon(
+              onPressed: _confirmarExclusao,
+              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              label: const Text(
+                'Eliminar Lançamento',
+                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.red),
+                padding: const EdgeInsets.symmetric(vertical: 14.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
