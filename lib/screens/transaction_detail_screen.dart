@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../database/db_helper.dart';
@@ -53,7 +52,16 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     );
 
     if (confirmar == true && _transacaoAtual.id != null) {
-      await _dbHelper.deleteTransacao(_transacaoAtual.id!);
+      try {
+        await _dbHelper.deleteTransacao(_transacaoAtual.id!);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao eliminar: $e')),
+          );
+        }
+        return;
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -78,17 +86,15 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
       ),
     );
 
-    // Se houve alterações salvas no banco, atualiza o registo em memória
-    if (alterou == true) {
-      final transacoesAtualizadas = await _dbHelper.getTransacoes();
-      final transacaoRecarregada = transacoesAtualizadas.firstWhere(
-        (t) => t.id == _transacaoAtual.id,
-        orElse: () => _transacaoAtual,
-      );
+    // Se houve alterações salvas no Firestore, recarrega apenas este documento
+    if (alterou == true && _transacaoAtual.id != null) {
+      final transacaoRecarregada = await _dbHelper.getTransacao(_transacaoAtual.id!);
 
-      setState(() {
-        _transacaoAtual = transacaoRecarregada;
-      });
+      if (transacaoRecarregada != null && mounted) {
+        setState(() {
+          _transacaoAtual = transacaoRecarregada;
+        });
+      }
     }
   }
 

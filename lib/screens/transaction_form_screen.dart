@@ -125,7 +125,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     }
   }
 
-  // Gravação no SQLite
+  // Gravação no Firestore
   Future<void> _salvarTransacao() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -154,31 +154,44 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
       return;
     }
 
-    if (widget.transacaoParaEdicao == null) {
-      // Inserção de novo registo
-      final novaTransacao = Transacao(
-        titulo: _tituloController.text.trim(),
-        valor: valorNumerico,
-        dataHora: dataHoraFormatada,
-        tipo: _tipoSelecionado,
-        descricao: _descricaoController.text.trim().isEmpty ? null : _descricaoController.text.trim(),
-        imagemPath: _imagemPath,
-      );
+    try {
+      if (widget.transacaoParaEdicao == null) {
+        // Inserção de novo registo
+        final novaTransacao = Transacao(
+          titulo: _tituloController.text.trim(),
+          valor: valorNumerico,
+          dataHora: dataHoraFormatada,
+          tipo: _tipoSelecionado,
+          descricao: _descricaoController.text.trim().isEmpty ? null : _descricaoController.text.trim(),
+          imagemPath: _imagemPath,
+        );
 
-      await _dbHelper.insertTransacao(novaTransacao);
-    } else {
-      // Atualização de registo existente
-      final transacaoAtualizada = Transacao(
-        id: widget.transacaoParaEdicao!.id,
-        titulo: _tituloController.text.trim(),
-        valor: valorNumerico,
-        dataHora: dataHoraFormatada,
-        tipo: _tipoSelecionado,
-        descricao: _descricaoController.text.trim().isEmpty ? null : _descricaoController.text.trim(),
-        imagemPath: _imagemPath,
-      );
+        await _dbHelper.insertTransacao(novaTransacao);
+      } else {
+        // Atualização de registo existente
+        final transacaoAtualizada = Transacao(
+          id: widget.transacaoParaEdicao!.id,
+          titulo: _tituloController.text.trim(),
+          valor: valorNumerico,
+          dataHora: dataHoraFormatada,
+          tipo: _tipoSelecionado,
+          descricao: _descricaoController.text.trim().isEmpty ? null : _descricaoController.text.trim(),
+          imagemPath: _imagemPath,
+        );
 
-      await _dbHelper.updateTransacao(transacaoAtualizada);
+        await _dbHelper.updateTransacao(transacaoAtualizada);
+      }
+    } catch (e) {
+      // Ex.: sem permissão nas regras do Firestore
+      if (mounted) {
+        setState(() {
+          _salvando = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao salvar: $e')),
+        );
+      }
+      return;
     }
 
     if (mounted) {
