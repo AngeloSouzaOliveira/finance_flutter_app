@@ -1,5 +1,5 @@
 class Transacao {
-  int? id;
+  String? id;
   String titulo;
   double valor;
   String dataHora;
@@ -17,9 +17,8 @@ class Transacao {
     this.imagemPath,
   });
 
-  Transacao.fromMap(Map<String, dynamic> map)
-    : id = map['id'],
-      titulo = map['titulo'],
+  Transacao.fromMap(Map<String, dynamic> map, {this.id})
+    : titulo = map['titulo'],
       valor = (map['valor'] as num).toDouble(),
       dataHora = map['dataHora'],
       tipo = map['tipo'],
@@ -27,7 +26,7 @@ class Transacao {
       imagemPath = map['imagemPath'];
 
   Map<String, dynamic> toMap() {
-    var map = <String, dynamic>{
+    return <String, dynamic>{
       'titulo': titulo,
       'valor': valor,
       'dataHora': dataHora,
@@ -35,10 +34,5 @@ class Transacao {
       'descricao': descricao,
       'imagemPath': imagemPath,
     };
-
-    if (id != null) {
-      map['id'] = id;
-    }
-    return map;
   }
 }
