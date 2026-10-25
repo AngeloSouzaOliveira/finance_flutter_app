@@ -2,7 +2,7 @@
 
 Aplicativo Flutter para **Controle Financeiro Pessoal**, desenvolvido para a **Avaliação Prática 1**.
 O app é um "todolist financeiro": cada item da lista é uma movimentação (receita ou despesa)
-persistida no banco local **SQLite**, com resumo de saldo, cadastro, edição, detalhes e exclusão com confirmação.
+persistida na nuvem com **Cloud Firestore** (Firebase), com resumo de saldo, cadastro, edição, detalhes e exclusão com confirmação.
 
 Tema Material 3, seed color verde, com formulários validados e Feedback via SnackBar.
 
@@ -16,25 +16,25 @@ A avaliação aborda os conteúdos vistos até agora e o app os cobre da seguint
 |---|---|
 | **Listas** | `HomeScreen` com `ListView.builder` exibindo as movimentações via `TransactionCard` |
 | **Navegação entre várias telas** | Navegação direta (`MaterialPageRoute`) para registro, detalhes e edição, com navegação de retorno reativa |
-| **Armazenamento local (SQLite)** | `sqflite` + `path_provider` + `path`, geridos pelo singleton `DBHelper` |
+| **Armazenamento em nuvem (Firestore)** | `firebase_core` + `cloud_firestore`, geridos pelo singleton `DBHelper` |
 
-## Banco de Dados (SQLite)
+## Banco de Dados (Cloud Firestore)
 
-- Nome do arquivo: `finance.db`
-- Tabela: `transacoes` (schema criado automaticamente no `onCreate`)
+- Coleção: `transacoes` (criada automaticamente no primeiro registo)
+- Cada documento é uma transação; o **ID do documento** é o `id` da `Transacao` (`String`)
 
-| Coluna | Tipo | Função |
+| Campo | Tipo | Função |
 |---|---|---|
-| `id` | INTEGER PK AUTOINCREMENT | Identificador único do registo |
-| `titulo` | TEXT NOT NULL | Título/nome do lançamento |
-| `valor` | REAL NOT NULL | Valor da movimentação (positivo) |
-| `dataHora` | TEXT NOT NULL | Data e hora no formato `dd/MM/yyyy HH:mm` |
-| `tipo` | TEXT NOT NULL | `'receita'` ou `'despesa'` |
-| `descricao` | TEXT | Observações (opcional) |
-| `imagemPath` | TEXT | Caminho de comprovativo (opcional) |
+| `titulo` | string | Título/nome do lançamento |
+| `valor` | number | Valor da movimentação (positivo) |
+| `dataHora` | string | Data e hora no formato `dd/MM/yyyy HH:mm` |
+| `tipo` | string | `'receita'` ou `'despesa'` |
+| `descricao` | string / null | Observações (opcional) |
+| `imagemPath` | string / null | Caminho de comprovativo (opcional) |
+| `criadoEm` | timestamp | Momento da criação, usado para ordenar a lista |
 
 Operações suportadas no `DBHelper` (singleton, `factory` + construtor privado):
-- `insertTransacao`, `getTransacoes`, `updateTransacao`, `deleteTransacao`
+- `insertTransacao`, `getTransacoes`, `getTransacao`, `streamTransacoes` (tempo real), `updateTransacao`, `deleteTransacao`
 
 Modelos associados:
 - `models/transacao.dart` — classe com serialização `toMap()` / `fromMap()`
@@ -45,7 +45,7 @@ Modelos associados:
 | N.º | Tela (`lib/screens/`) | Descrição |
 |---|---|---|
 | 1 | `login_screen.dart` | Login local com navegação `pushReplacement` para a Home |
-| 2 | `home_screen.dart` | **Tela principal** — carrega as transações do SQLite via `Future` e exibe a lista; calcula e mostra saldo/total no `BalanceCard` |
+| 2 | `home_screen.dart` | **Tela principal** — escuta as transações do Firestore em tempo real (`StreamBuilder`) e exibe a lista; calcula e mostra saldo/total no `BalanceCard` |
 | 3 | `transaction_form_screen.dart` | Cadastro **e** edição — formulário reativo reutilizado para as duas funcionalidades (req. OBS atendido). Com validação, seleção de tipo, data (`showDatePicker`), hora (`showTimePicker`) e parsing de valores no formato brasileiro (`10.000` → 10.000, `10.000,50` → 10000.50) |
 | 4 | `transaction_detail_screen.dart` | Exibe os dados do item clicado na lista e pede **confirmação para exclusão** (AlertDialog), além de navegar para edição |
 | — | ~~`charts_screen.dart`~~ | Relatório/gráficos **removido** — será implementado em outro momento |
@@ -62,11 +62,15 @@ Modelos associados:
 - [x] **Cada item tem pelo menos 3 informações** — ícone de tipo, título, data/hora e valor monetário (`+ Receita` / `- Despesa`)
 - [x] **3+ telas** — Login, principal com lista, formulário de inclusão, detalhes com confirmação de exclusão (4 no total)
 - [x] **Tela reutilizada** para incluir/editar (conforme OBS do enunciado)
-- [x] **Dados persistidos em SQLite local**, independente de conexão
+- [x] **Dados persistidos no Cloud Firestore** (com cache offline do próprio Firestore)
 
 ## Como executar
 
 ```bash
+# configurar o Firebase (uma vez) — gera lib/firebase_options.dart
+dart pub global activate flutterfire_cli
+flutterfire configure
+
 # dependências
 flutter pub get
 
@@ -77,16 +81,17 @@ flutter run
 flutter analyze
 ```
 
-Deps: Flutter + Dart 3, `flutter pub get` resolve `sqflite`, `path`, `path_provider`,
+Deps: Flutter + Dart 3, `flutter pub get` resolve `firebase_core`, `cloud_firestore`,
 `intl` (formatação de moeda/data `pt_BR`) e `image_picker` (reservada para comprovativos).
 
 ## Estrutura do projeto
 
 ```
 lib/
-├── main.dart                     # ponto de entrada (FinanceApp)
+├── main.dart                     # ponto de entrada (Firebase.initializeApp + FinanceApp)
+├── firebase_options.dart         # gerado pelo flutterfire configure
 ├── database/
-│   └── db_helper.dart            # singleton + tabela transacoes
+│   └── db_helper.dart            # singleton + coleção transacoes (Firestore)
 ├── models/
 │   ├── transacao.dart            # entidade principal (toMap/fromMap)
 │   └── categoria.dart            # entidade de categoria
